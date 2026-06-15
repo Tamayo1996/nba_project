@@ -11,35 +11,37 @@ import keras
 st.set_page_config(page_title="NBA AI Predictor", page_icon="🏀", layout="wide")
 st.title("🏀 NBA Player Analytics & Deep Learning Predictor")
 
-# --- CARGA DE DATOS, MODELOS Y ESCALADORES ---
+# --- CARGA DE DATOS, MODELOS Y ESCALADORES DESDE SUS NUEVAS CARPETAS ---
 @st.cache_resource
 def cargar_recursos():
-    # Modelos 
-    modelo_pos = keras.models.load_model('modelo_posiciones_nba.keras')
-    modelo_pts = keras.models.load_model('modelo_puntos_nba.keras')
-    modelo_proy = keras.models.load_model('modelo_proyeccion_futuro_nba.keras')
+    dir_modelos = 'models'
+    ruta_csv = os.path.join('data', 'df_final.csv')
+    
+    # Modelos
+    modelo_pos = keras.models.load_model(os.path.join(dir_modelos, 'modelo_posiciones_nba.keras'))
+    modelo_pts = keras.models.load_model(os.path.join(dir_modelos, 'modelo_puntos_nba.keras'))
+    modelo_proy = keras.models.load_model(os.path.join(dir_modelos, 'modelo_proyeccion_futuro_nba.keras'))
     
     # Escaladores matemáticos
-    with open('scaler_posiciones.pkl', 'rb') as f:
+    with open(os.path.join(dir_modelos, 'scaler_posiciones.pkl'), 'rb') as f:
         sc_pos = pickle.load(f)
-    with open('scaler_puntos.pkl', 'rb') as f:
+    with open(os.path.join(dir_modelos, 'scaler_puntos.pkl'), 'rb') as f:
         sc_pts = pickle.load(f)
-    with open('scaler_proyeccion_futuro.pkl', 'rb') as f:
+    with open(os.path.join(dir_modelos, 'scaler_proyeccion_futuro.pkl'), 'rb') as f:
         sc_proy = pickle.load(f)
         
     # Dataset
     try:
-        df = pd.read_csv('df_final.csv')
+        df = pd.read_csv(ruta_csv)
     except:
         df = None
         
     return modelo_pos, modelo_pts, modelo_proy, sc_pos, sc_pts, sc_proy, df
 
 try:
-    # CORRECCIÓN: Alineamos los nombres que devuelve la función con los que usa la App
     model_pos, model_reg, model_proy, scaler_pos, scaler_pts, scaler_proy, df_final = cargar_recursos()
 except Exception as e:
-    st.error(f"Error al cargar recursos (Asegúrate de tener los archivos necesarios en la carpeta): {e}")
+    st.error(f"Error al cargar recursos (Verifica que las carpetas 'data' y 'models' tengan sus archivos correspondientes): {e}")
     st.stop()
 
 # Calculamos los límites de años de forma dinámica si el dataset existe
@@ -47,7 +49,7 @@ if df_final is not None:
     min_year = int(df_final['Year'].min())
     max_year = int(df_final['Year'].max())
 else:
-    min_year, max_year = 1950, 2024 # Valores por defecto de seguridad
+    min_year, max_year = 1950, 2024
 
 tab1, tab2, tab3 = st.tabs([
     "🔍 Buscador de Jugadores Reales", 
@@ -70,7 +72,7 @@ with tab1:
         
     if st.button("Analizar Jugador 🚀") and nombre_input and ano_input:
         if df_final is None:
-            st.error("No se encuentra el archivo 'df_final.csv'.")
+            st.error("No se encuentra el archivo 'df_final.csv' dentro de la carpeta 'data'.")
         else:
             coincidencias = df_final[
                 (df_final['Player'].str.contains(nombre_input, case=False, na=False)) & 
@@ -106,7 +108,6 @@ with tab1:
                 
                 try:
                     pred_pos = model_pos.predict(datos_pos_scaled, verbose=0)[0]
-                    # NORMALIZACIÓN: Forzamos a que la suma de probabilidades sea exactamente 1.0 (100%)
                     if np.sum(pred_pos) > 0:
                         pred_pos = pred_pos / np.sum(pred_pos)
                     
@@ -122,9 +123,9 @@ with tab1:
                     posiciones = ['Pívot (C)', 'Ala-Pívot (PF)', 'Base (PG)', 'Alero (SF)', 'Escolta (SG)']
                     chart_data = pd.DataFrame({'Probabilidad (%)': pred_pos * 100}, index=posiciones)
                     st.bar_chart(chart_data)
+                    
                     st.markdown("---")
-                    if os.path.exists("grafico_posiciones.png"):
-                        st.image("grafico_posiciones.png", caption="Análisis de población global generado nativamente en R (ggplot2)")
+                    
                     
                 with res_col2:
                     st.subheader("🎯 Predicción de Anotación (Modelo 2)")
@@ -134,7 +135,7 @@ with tab1:
                     st.caption(f"Margen de desviación exacto en este test: {error:.2f} puntos por partido.")
                     st.markdown("---")
                     if os.path.exists("grafico_dispersion.png"):
-                        st.image("grafico_dispersion.png", caption="Análisis de desviación muestral generado nativamente en R (ggplot2)")
+                        st.image("grafico_dispersion.png", caption="Análisis de desviación muestral (Imagen estática)")
 
 # ==========================================
 # PESTAÑA 2: SIMULADOR FICTICIO 
@@ -145,7 +146,6 @@ with tab2:
     
     sim_col1, sim_col2 = st.columns([1.2, 1.8])
     with sim_col1:
-        # BLOQUE 1: EXCLUSIVOS DE ANOTACIÓN
         st.markdown("#### 🎯 Atributos de Anotación *(Modelo 2)*")
         s_mp = st.slider("Minutos en pista (MP):", 5.0, 48.0, 25.0, 0.5)
         s_fga = st.slider("Tiros de campo intentados (FGA):", 1.0, 30.0, 10.0, 0.5)
@@ -153,14 +153,10 @@ with tab2:
         s_fta = st.slider("Tiros libres intentados (FTA):", 0.0, 15.0, 3.0, 0.5)
         
         st.markdown("---")
-        
-        # BLOQUE 2: VARIABLE COMPARTIDA
         st.markdown("#### 🔄 Atributo Compartido *(Influye en ambos Modelos)*")
         s_ast = st.slider("Asistencias repartidas (AST):", 0.0, 15.0, 3.0, 0.5)
         
         st.markdown("---")
-        
-        # BLOQUE 3: EXCLUSIVOS DE POSICIÓN
         st.markdown("#### 🔮 Atributos del Estilo de Juego *(Modelo 1)*")
         s_3p = st.slider("Triples anotados (3P):", 0.0, 7.0, 1.0, 0.1)
         s_trb = st.slider("Rebotes totales capturados (TRB):", 0.0, 20.0, 5.0, 0.5)
@@ -178,7 +174,6 @@ with tab2:
         
         try:
             p_pos_sim = model_pos.predict(d_pos_sim_scaled, verbose=0)[0]
-            # NORMALIZACIÓN: Forzamos el ajuste a 100% en el simulador ficticio
             if np.sum(p_pos_sim) > 0:
                 p_pos_sim = p_pos_sim / np.sum(p_pos_sim)
                 
@@ -206,11 +201,11 @@ with tab3:
         nombre_proy = st.text_input("Nombre o Apellido del Jugador a proyectar:", placeholder="Ej. LeBron, Jordan, Curry...", key="nombre_p")
     with p_col2:
         ano_proy = st.text_input("Año que deseas PREDECIR:", placeholder=f"Ej. {max_year}")
-        st.caption(f"💡 Recuerda: El rango de tu base de datos histórica es **{min_year} - {max_year}**")
+        st.caption(f"💡 Recuerda: El rango de tu base de datos histórica es {min_year} - {max_year}")
 
     if st.button("Calcular Proyección Futura 🚀") and nombre_proy and ano_proy:
         if df_final is None:
-            st.error("No se encuentra el archivo 'df_final.csv'.")
+            st.error("No se encuentra el archivo 'df_final.csv' dentro de la carpeta 'data'.")
         else:
             try:
                 target_year = int(ano_proy)
@@ -228,7 +223,6 @@ with tab3:
                     ano_buscado = target_year - k
                     fila_ano = historial[historial['Year'] == ano_buscado]
                     if not fila_ano.empty:
-                        # Insertamos al principio para mantener el orden cronológico antiguo -> reciente
                         anos_reales_datos.insert(0, fila_ano.iloc[0])
                     else:
                         break
@@ -240,7 +234,6 @@ with tab3:
                     num_anos_faltantes = 5 - num_anos_reales
 
                     fila_historial = []
-                    # Rellenar con ceros si el jugador tiene menos de 5 años de experiencia previa al año target
                     for _ in range(num_anos_faltantes):
                         fila_historial.extend([0.0, 0.0, 0.0, 0.0])
 

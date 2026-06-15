@@ -10,11 +10,21 @@ os.environ["KERAS_BACKEND"] = "torch"
 import keras
 from keras import layers
 
+# --- CONFIGURACIÓN DE RUTAS ---
+DATA_PATH = os.path.join('data', 'df_final.csv')
+MODELS_DIR = 'models'
+
+# Aseguramos que la carpeta de destino para los modelos exista
+os.makedirs(MODELS_DIR, exist_ok=True)
+
 # ==========================================
 # 1. PREPARACIÓN GENERAL Y LIMPIEZA DE DATOS
 # ==========================================
 print("📦 Cargando y preparando el dataset...")
-df_final = pd.read_csv('df_final.csv')
+if not os.path.exists(DATA_PATH):
+    raise FileNotFoundError(f"❌ No se encontró el archivo '{DATA_PATH}'. Asegúrate de que esté dentro de la carpeta 'data'.")
+
+df_final = pd.read_csv(DATA_PATH)
 
 # Asegurar promedios por partido para el Modelo 2 (Puntos)
 df_final['MP_per_game'] = (df_final['MP'] / df_final['G']).fillna(0)
@@ -30,23 +40,18 @@ df_final['TRB_per_game'] = (df_final['TRB'] / df_final['G']).fillna(0)
 df_final['STL_per_game'] = (df_final['STL'] / df_final['G']).fillna(0)
 df_final['BLK_per_game'] = (df_final['BLK'] / df_final['G']).fillna(0)
 
-# Re-guardamos para que Streamlit tenga las columnas exactas que busca en la Pestaña 1
-df_final.to_csv('df_final.csv', index=False)
+# Re-guardamos dentro de la carpeta data
+df_final.to_csv(DATA_PATH, index=False)
 
 
 # ==========================================
 # FUNCIÓN AUXILIAR PARA GRID SEARCH NATIVO
 # ==========================================
 def grid_search_keras(build_model_fn, X_train, y_train, X_val, y_val, param_grid, is_regression=False):
-    """
-    Realiza una búsqueda en cuadrícula (Grid Search) manual y eficiente sobre modelos de Keras.
-    Evita envoltorios externos complejos para garantizar compatibilidad total con PyTorch Backend.
-    """
     best_score = float('inf') if is_regression else -1.0
     best_model = None
     best_params = None
     
-    # Generar combinaciones de hiperparámetros
     import itertools
     keys, values = zip(*param_grid.items())
     permutations_dicts = [dict(zip(keys, v)) for v in itertools.product(*values)]
@@ -57,7 +62,6 @@ def grid_search_keras(build_model_fn, X_train, y_train, X_val, y_val, param_grid
         print(f" ⚙️ Evaluando: {params}")
         model = build_model_fn(input_shape=X_train.shape[1], **params)
         
-        # Entrenamiento rápido para validación del Grid Search
         monitor_metric = 'val_loss' if is_regression else 'val_accuracy'
         history = model.fit(
             X_train, y_train, 
@@ -67,7 +71,6 @@ def grid_search_keras(build_model_fn, X_train, y_train, X_val, y_val, param_grid
             verbose=0
         )
         
-        # Evaluar última época
         score = history.history[monitor_metric][-1]
         
         if is_regression:
@@ -120,10 +123,10 @@ grid_pos = {
 
 best_model_pos, _ = grid_search_keras(build_model_pos, X1_train_sc, y1_train, X1_test_sc, y1_test, grid_pos, is_regression=False)
 
-# Re-entrenamiento final óptimo o guardado directo
-best_model_pos.save('modelo_posiciones_nba.keras')
-with open('scaler_posiciones.pkl', 'wb') as f:
-    pickle.load = pickle.dump(sc_pos, f)
+# Guardado en /models
+best_model_pos.save(os.path.join(MODELS_DIR, 'modelo_posiciones_nba.keras'))
+with open(os.path.join(MODELS_DIR, 'scaler_posiciones.pkl'), 'wb') as f:
+    pickle.dump(sc_pos, f)
 
 
 # ==========================================
@@ -146,7 +149,7 @@ def build_model_pts(input_shape, dense_units, dropout_rate, lr):
         layers.Dense(dense_units, activation='relu', input_shape=(input_shape,)),
         layers.Dropout(dropout_rate),
         layers.Dense(dense_units // 2, activation='relu'),
-        layers.Dense(1) # Capa de salida lineal para regresión continua
+        layers.Dense(1)
     ])
     model.compile(optimizer=keras.optimizers.Adam(learning_rate=lr), 
                   loss='mean_squared_error', metrics=['mean_absolute_error'])
@@ -160,8 +163,9 @@ grid_pts = {
 
 best_model_pts, _ = grid_search_keras(build_model_pts, X2_train_sc, y2_train, X2_test_sc, y2_test, grid_pts, is_regression=True)
 
-best_model_pts.save('modelo_puntos_nba.keras')
-with open('scaler_puntos.pkl', 'wb') as f:
+# Guardado en /models
+best_model_pts.save(os.path.join(MODELS_DIR, 'modelo_puntos_nba.keras'))
+with open(os.path.join(MODELS_DIR, 'scaler_puntos.pkl'), 'wb') as f:
     pickle.dump(sc_pts, f)
 
 
@@ -170,20 +174,16 @@ with open('scaler_puntos.pkl', 'wb') as f:
 # ==========================================
 print("\n--- 🔮 Generando Datos Secuenciales y Entrenando Modelo 3: Proyección Temporal ---")
 
-# Para entrenar la proyección multianual, construimos los vectores de historial secuencial (últimos 5 años)
 X3_list = []
 y3_list = []
-
-# Agrupamos por jugador para extraer sus líneas de tiempo consecutivas
 jugadores_unicos = df_final['Player'].unique()
 
 for jugador in jugadores_unicos:
     historial = df_final[df_final['Player'] == jugador].sort_values('Year')
     if len(historial) < 6:
-        continue # Necesitamos mínimo 5 años de historial + 1 año objetivo para predecir
+        continue
         
     for i in range(len(historial) - 5):
-        # Bloque de 5 años pasados
         bloque = historial.iloc[i:i+5]
         vector_historial = []
         for _, fila in bloque.iterrows():
@@ -194,9 +194,7 @@ for jugador in jugadores_unicos:
                 fila['Age']
             ])
         
-        # El año Target (i+5) es lo que intentamos proyectar
         target_pts = historial.iloc[i+5]['PTS_per_game']
-        
         X3_list.append(vector_historial)
         y3_list.append(target_pts)
 
@@ -204,8 +202,8 @@ X3 = np.array(X3_list)
 y3 = np.array(y3_list)
 
 if len(X3) == 0:
-    print("⚠️ Datos secuenciales insuficientes en tu CSV actual para entrenar la Proyección. Generando matriz sintética compatible por seguridad.")
-    X3 = np.random.rand(100, 20) # 5 años * 4 variables = 20 inputs
+    print("⚠️ Datos secuenciales insuficientes. Generando matriz sintética compatible por seguridad.")
+    X3 = np.random.rand(100, 20)
     y3 = np.random.rand(100) * 20
 
 X3_train, X3_test, y3_train, y3_test = train_test_split(X3, y3, test_size=0.2, random_state=42)
@@ -233,9 +231,9 @@ grid_proy = {
 
 best_model_proy, _ = grid_search_keras(build_model_proy, X3_train_sc, y3_train, X3_test_sc, y3_test, grid_proy, is_regression=True)
 
-best_model_proy.save('modelo_proyeccion_futuro_nba.keras')
-with open('scaler_proyeccion_futuro.pkl', 'wb') as f:
+# Guardado en /models
+best_model_proy.save(os.path.join(MODELS_DIR, 'modelo_proyeccion_futuro_nba.keras'))
+with open(os.path.join(MODELS_DIR, 'scaler_proyeccion_futuro.pkl'), 'wb') as f:
     pickle.dump(sc_proy, f)
 
-print("\n🚀 ¡TODO EL SISTEMA SE HA ENTRENADO CORRECTAMENTE CON GRID SEARCH!")
-print("Archivos listos para ser consumidos por tu interfaz de Streamlit.")
+print(f"\n🚀 ¡TODO EL SISTEMA SE HA ENTRENADO CORRECTAMENTE Y GUARDADO EN OLMOS/PARTIDAS EN '{MODELS_DIR}'!")
