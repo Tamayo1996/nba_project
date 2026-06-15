@@ -12,4 +12,5 @@ dependencies = [
     "torch",
     "matplotlib",
     "seaborn",
+    "h5py==3.10.0",
 ]
