@@ -6,4 +6,4 @@ matplotlib
 seaborn
 keras
 torch
-tensorflow-cpu
+h5py
