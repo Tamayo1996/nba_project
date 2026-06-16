@@ -20,7 +20,7 @@ os.makedirs(MODELS_DIR, exist_ok=True)
 # ==========================================
 # 1. PREPARACIÓN GENERAL Y LIMPIEZA DE DATOS
 # ==========================================
-print("📦 Cargando y preparando el dataset...")
+print(" Cargando y preparando el dataset...")
 if not os.path.exists(DATA_PATH):
     raise FileNotFoundError(f"❌ No se encontró el archivo '{DATA_PATH}'. Asegúrate de que esté dentro de la carpeta 'data'.")
 
@@ -89,9 +89,9 @@ def grid_search_keras(build_model_fn, X_train, y_train, X_val, y_val, param_grid
 
 
 # ==========================================
-# 🧠 MODELO 1: CLASIFICACIÓN DE POSICIONES
+#  MODELO 1: CLASIFICACIÓN DE POSICIONES
 # ==========================================
-print("\n--- 🏀 Entrenando Modelo 1: Clasificación de Posiciones ---")
+print("\n---  Entrenando Modelo 1: Clasificación de Posiciones ---")
 features_pos = ['3P_per_game', 'AST_per_game', 'TRB_per_game', 'STL_per_game', 'BLK_per_game']
 target_pos = ['Pos_C', 'Pos_PF', 'Pos_PG', 'Pos_SF', 'Pos_SG']
 
@@ -130,9 +130,9 @@ with open(os.path.join(MODELS_DIR, 'scaler_posiciones.pkl'), 'wb') as f:
 
 
 # ==========================================
-# 🎯 MODELO 2: PREDICCIÓN DE ANOTACIÓN (REGRESIÓN)
+#  MODELO 2: PREDICCIÓN DE ANOTACIÓN (REGRESIÓN)
 # ==========================================
-print("\n--- 🎯 Entrenando Modelo 2: Predicción de Puntos (Regresión) ---")
+print("\n---  Entrenando Modelo 2: Predicción de Puntos (Regresión) ---")
 features_pts = ['MP_per_game', 'FGA_per_game', '3PA_per_game', 'FTA_per_game', 'AST_per_game']
 
 X2 = df_final[features_pts].values
@@ -170,9 +170,9 @@ with open(os.path.join(MODELS_DIR, 'scaler_puntos.pkl'), 'wb') as f:
 
 
 # ==========================================
-# 🔮 MODELO 3: PROYECCIÓN TEMPORAL FUTURA (MULTIANUAL)
+#  MODELO 3: PROYECCIÓN TEMPORAL FUTURA (MULTIANUAL)
 # ==========================================
-print("\n--- 🔮 Generando Datos Secuenciales y Entrenando Modelo 3: Proyección Temporal ---")
+print("\n---  Generando Datos Secuenciales y Entrenando Modelo 3: Proyección Temporal ---")
 
 X3_list = []
 y3_list = []

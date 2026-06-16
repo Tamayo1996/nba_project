@@ -9,7 +9,7 @@ os.environ["KERAS_BACKEND"] = "torch"
 import keras
 
 st.set_page_config(page_title="NBA AI Predictor", page_icon="🏀", layout="wide")
-st.title("🏀 NBA Player Analytics & Deep Learning Predictor")
+st.title(" Predicción de Rendimiento de Jugadores de la NBA")
 
 # --- CARGA DE DATOS, MODELOS Y ESCALADORES DESDE SUS NUEVAS CARPETAS ---
 @st.cache_resource
@@ -52,9 +52,9 @@ else:
     min_year, max_year = 1950, 2024
 
 tab1, tab2, tab3 = st.tabs([
-    "🔍 Buscador de Jugadores Reales", 
-    "🎛️ Laboratorio de Jugadores Ficticios", 
-    "🔮 Proyección de Rendimiento Futuro"
+    " Buscador de Jugadores Reales", 
+    " Laboratorio de Jugadores Ficticios", 
+    " Proyección de Rendimiento Futuro"
 ])
 
 # ==========================================
@@ -68,9 +68,9 @@ with tab1:
         nombre_input = st.text_input("Nombre o Apellido del Jugador:", placeholder="Ej. Curry, Harden, James...", key="nombre_t1")
     with col2:
         ano_input = st.text_input("Año de la Temporada:", placeholder=f"Ej. {max_year}", key="ano_t1")
-        st.caption(f"💡 Historial disponible en tu base de datos: desde **{min_year}** hasta **{max_year}**")
+        st.caption(f" Historial disponible en tu base de datos: desde **{min_year}** hasta **{max_year}**")
         
-    if st.button("Analizar Jugador 🚀") and nombre_input and ano_input:
+    if st.button("Analizar Jugador ") and nombre_input and ano_input:
         if df_final is None:
             st.error("No se encuentra el archivo 'df_final.csv' dentro de la carpeta 'data'.")
         else:
@@ -98,7 +98,7 @@ with tab1:
                 
                 puntos_reales = float(jugador.get('PTS_per_game', 0))
 
-                st.write(f"📊 **Estadísticas Reales registradas (Por partido):** Minutos: {mp:.1f} | Tiros Intentados: {fga:.1f} | Triples: {triples:.1f} | Asistencias: {ast:.1f} | Rebotes: {rebotes:.1f}")
+                st.write(f" **Estadísticas Reales registradas (Por partido):** Minutos: {mp:.1f} | Tiros Intentados: {fga:.1f} | Triples: {triples:.1f} | Asistencias: {ast:.1f} | Rebotes: {rebotes:.1f}")
 
                 datos_pos = np.array([[triples, ast, rebotes, robos, tapones]])
                 datos_reg = np.array([[mp, fga, pa3, fta, ast]])
@@ -119,7 +119,7 @@ with tab1:
 
                 res_col1, res_col2 = st.columns(2)
                 with res_col1:
-                    st.subheader("🔮 Clasificación de Posición (Modelo 1)")
+                    st.subheader(" Clasificación de Posición (Modelo 1)")
                     posiciones = ['Pívot (C)', 'Ala-Pívot (PF)', 'Base (PG)', 'Alero (SF)', 'Escolta (SG)']
                     chart_data = pd.DataFrame({'Probabilidad (%)': pred_pos * 100}, index=posiciones)
                     st.bar_chart(chart_data)
@@ -128,7 +128,7 @@ with tab1:
                     
                     
                 with res_col2:
-                    st.subheader("🎯 Predicción de Anotación (Modelo 2)")
+                    st.subheader(" Predicción de Anotación (Modelo 2)")
                     st.metric(label="Puntos por partido PREDICHOS por la IA", value=f"{pred_pts:.2f} PTS")
                     st.metric(label="Puntos por partido REALES anotados", value=f"{puntos_reales:.2f} PTS")
                     error = abs(pred_pts - puntos_reales)
@@ -141,30 +141,30 @@ with tab1:
 # PESTAÑA 2: SIMULADOR FICTICIO 
 # ==========================================
 with tab2:
-    st.header("🎛️ Laboratorio de Jugadores Ficticios")
+    st.header(" Laboratorio de Jugadores Ficticios")
     st.write("Modifica los atributos del jugador. Los bloques diferencian qué estadísticas alimentan a cada modelo.")
     
     sim_col1, sim_col2 = st.columns([1.2, 1.8])
     with sim_col1:
-        st.markdown("#### 🎯 Atributos de Anotación *(Modelo 2)*")
+        st.markdown("####  Atributos de Anotación *(Modelo 2)*")
         s_mp = st.slider("Minutos en pista (MP):", 5.0, 48.0, 25.0, 0.5)
         s_fga = st.slider("Tiros de campo intentados (FGA):", 1.0, 30.0, 10.0, 0.5)
         s_3pa = st.slider("Triples intentados (3PA):", 0.0, 15.0, 3.0, 0.5)
         s_fta = st.slider("Tiros libres intentados (FTA):", 0.0, 15.0, 3.0, 0.5)
         
         st.markdown("---")
-        st.markdown("#### 🔄 Atributo Compartido *(Influye en ambos Modelos)*")
+        st.markdown("####  Atributo Compartido *(Influye en ambos Modelos)*")
         s_ast = st.slider("Asistencias repartidas (AST):", 0.0, 15.0, 3.0, 0.5)
         
         st.markdown("---")
-        st.markdown("#### 🔮 Atributos del Estilo de Juego *(Modelo 1)*")
+        st.markdown("####  Atributos del Estilo de Juego *(Modelo 1)*")
         s_3p = st.slider("Triples anotados (3P):", 0.0, 7.0, 1.0, 0.1)
         s_trb = st.slider("Rebotes totales capturados (TRB):", 0.0, 20.0, 5.0, 0.5)
         s_stl = st.slider("Robos de balón (STL):", 0.0, 5.0, 1.0, 0.1)
         s_blk = st.slider("Tapones colocados (BLK):", 0.0, 5.0, 0.5, 0.1)
         
     with sim_col2:
-        st.subheader("🧠 Análisis del Cerebro Artificial en Tiempo Real")
+        st.subheader(" Análisis del Cerebro Artificial en Tiempo Real")
         
         d_pos_sim = np.array([[s_3p, s_ast, s_trb, s_stl, s_blk]])
         d_reg_sim = np.array([[s_mp, s_fga, s_3pa, s_fta, s_ast]])
@@ -187,13 +187,13 @@ with tab2:
         st.bar_chart(sim_chart_data)
         
         st.markdown("---")
-        st.metric(label="🔥 Proyección de Puntos Estimados por la IA", value=f"{p_pts_sim:.1f} Puntos por Partido")
+        st.metric(label=" Proyección de Puntos Estimados por la IA", value=f"{p_pts_sim:.1f} Puntos por Partido")
 
 # ==========================================
 # PESTAÑA 3: PROYECCIÓN A FUTURO
 # ==========================================
 with tab3:
-    st.header("🔮 Proyección Temporal a Futuro (Modelo Adaptativo Multianual)")
+    st.header(" Proyección Temporal a Futuro (Modelo Adaptativo Multianual)")
     st.write("Introduce un jugador y el año que quieres predecir.")
 
     p_col1, p_col2 = st.columns(2)
@@ -201,9 +201,9 @@ with tab3:
         nombre_proy = st.text_input("Nombre o Apellido del Jugador a proyectar:", placeholder="Ej. LeBron, Jordan, Curry...", key="nombre_p")
     with p_col2:
         ano_proy = st.text_input("Año que deseas PREDECIR:", placeholder=f"Ej. {max_year}")
-        st.caption(f"💡 Recuerda: El rango de tu base de datos histórica es {min_year} - {max_year}")
+        st.caption(f" Recuerda: El rango de tu base de datos histórica es {min_year} - {max_year}")
 
-    if st.button("Calcular Proyección Futura 🚀") and nombre_proy and ano_proy:
+    if st.button("Calcular Proyección Futura ") and nombre_proy and ano_proy:
         if df_final is None:
             st.error("No se encuentra el archivo 'df_final.csv' dentro de la carpeta 'data'.")
         else:
@@ -256,17 +256,17 @@ with tab3:
                         st.error(f"Error en el modelo de futuro: {e}")
                         pred_futura = 0.0
 
-                    st.info(f"📈 **Historial consecutivo analizado:** {', '.join(anos_detectados_str)}")
+                    st.info(f" **Historial consecutivo analizado:** {', '.join(anos_detectados_str)}")
 
                     fila_futuro_real = historial[historial['Year'] == target_year]
 
                     col_res1, col_res2 = st.columns(2)
                     with col_res1:
-                        st.subheader(f"🔮 Proyección para {target_year}")
+                        st.subheader(f" Proyección para {target_year}")
                         st.metric(label="Puntos por partido PREDICHOS", value=f"{pred_futura:.2f} PTS")
                         
                     with col_res2:
-                        st.subheader(f"📊 Rendimiento Real en {target_year}")
+                        st.subheader(f" Rendimiento Real en {target_year}")
                         if not fila_futuro_real.empty:
                             pts_fut_real = float(fila_futuro_real.iloc[0].get('PTS_per_game', 0))
                             st.metric(label="Puntos por partido REALES", value=f"{pts_fut_real:.2f} PTS")
