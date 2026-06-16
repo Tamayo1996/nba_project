@@ -140,28 +140,33 @@ with tab1:
 # ==========================================
 # PESTAÑA 2: SIMULADOR FICTICIO 
 # ==========================================
+# ==========================================
+# PESTAÑA 2: SIMULADOR FICTICIO 
+# ==========================================
 with tab2:
     st.header(" Laboratorio de Jugadores Ficticios")
     st.write("Modifica los atributos del jugador. Los bloques diferencian qué estadísticas alimentan a cada modelo.")
     
     sim_col1, sim_col2 = st.columns([1.2, 1.8])
     with sim_col1:
-        st.markdown("####  Atributos de Anotación *(Modelo 2)*")
-        s_mp = st.slider("Minutos en pista (MP):", 5.0, 48.0, 25.0, 0.5)
-        s_fga = st.slider("Tiros de campo intentados (FGA):", 1.0, 30.0, 10.0, 0.5)
-        s_3pa = st.slider("Triples intentados (3PA):", 0.0, 15.0, 3.0, 0.5)
-        s_fta = st.slider("Tiros libres intentados (FTA):", 0.0, 15.0, 3.0, 0.5)
+        # --- MOVIDO ARRIBA: Atributos del Modelo 1 ---
+        st.markdown("####  Atributos del Estilo de Juego *(Modelo 1)*")
+        s_3p = st.slider("Triples anotados (3P):", 0.0, 7.0, 1.0, 0.1)
+        s_trb = st.slider("Rebotes totales capturados (TRB):", 0.0, 20.0, 5.0, 0.5)
+        s_stl = st.slider("Robos de balón (STL):", 0.0, 5.0, 1.0, 0.1)
+        s_blk = st.slider("Tapones colocados (BLK):", 0.0, 5.0, 0.5, 0.1)
         
         st.markdown("---")
         st.markdown("####  Atributo Compartido *(Influye en ambos Modelos)*")
         s_ast = st.slider("Asistencias repartidas (AST):", 0.0, 15.0, 3.0, 0.5)
         
         st.markdown("---")
-        st.markdown("####  Atributos del Estilo de Juego *(Modelo 1)*")
-        s_3p = st.slider("Triples anotados (3P):", 0.0, 7.0, 1.0, 0.1)
-        s_trb = st.slider("Rebotes totales capturados (TRB):", 0.0, 20.0, 5.0, 0.5)
-        s_stl = st.slider("Robos de balón (STL):", 0.0, 5.0, 1.0, 0.1)
-        s_blk = st.slider("Tapones colocados (BLK):", 0.0, 5.0, 0.5, 0.1)
+        # --- MOVIDO ABAJO: Atributos del Modelo 2 ---
+        st.markdown("####  Atributos de Anotación *(Modelo 2)*")
+        s_mp = st.slider("Minutos en pista (MP):", 5.0, 48.0, 25.0, 0.5)
+        s_fga = st.slider("Tiros de campo intentados (FGA):", 1.0, 30.0, 10.0, 0.5)
+        s_3pa = st.slider("Triples intentados (3PA):", 0.0, 15.0, 3.0, 0.5)
+        s_fta = st.slider("Tiros libres intentados (FTA):", 0.0, 15.0, 3.0, 0.5)
         
     with sim_col2:
         st.subheader(" Análisis del Cerebro Artificial en Tiempo Real")
@@ -181,6 +186,7 @@ with tab2:
         except:
             p_pos_sim = [0.2] * 5
             p_pts_sim = 0.0
+            
             
         pos_labels = ['Pívot (C)', 'Ala-Pívot (PF)', 'Base (PG)', 'Alero (SF)', 'Escolta (SG)']
         sim_chart_data = pd.DataFrame({'Probabilidad (%)': p_pos_sim * 100}, index=pos_labels)
